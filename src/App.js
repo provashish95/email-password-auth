@@ -1,5 +1,5 @@
 
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import app from './firebase.init';
 import Form from 'react-bootstrap/Form'
@@ -11,18 +11,25 @@ const auth = getAuth(app);
 function App() {
   const [validated, setValidated] = useState(false);
   const [error, setError] = useState('')
+  const [registered, setRegistered] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
 
   const handleEmailBlur = (event) => {
     setEmail(event.target.value);
   }
+
   const handlePasswordBlur = (event) => {
     setPassword(event.target.value);
   }
+
+  const handleRegisteredChange = (event) => {
+    setRegistered(event.target.checked);
+  }
+
   const handleFormSubmit = (event) => {
     event.preventDefault();
-
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
       event.stopPropagation();
@@ -35,22 +42,41 @@ function App() {
     setValidated(true);
     setError('');
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        console.log(user);
-      })
-      .catch((error) => {
-        console.log(error);
-      })
-    // console.log('form submitted', email, password);
+    if (registered) {
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          //console.log(error);
+          setError(errorMessage);
+        })
+    } else {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          // console.log(user);
+          setEmail('')
+          setPassword('')
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          //console.log(error);
+          setError(errorMessage);
+        })
+    }
+
+
     event.preventDefault();
   }
 
   return (
     <div >
       <div className="registration w-50 mx-auto mt-5">
-        <h2 className="text-primary">Please register</h2>
+
+        <h2 className="text-primary">Please {registered ? 'Login' : 'Register'}</h2>
         <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Label>Email address</Form.Label>
@@ -59,7 +85,6 @@ function App() {
               Please input valid email
             </Form.Control.Feedback>
           </Form.Group>
-
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>Password</Form.Label>
             <Form.Control onBlur={handlePasswordBlur} type="password" placeholder="Password" required />
@@ -69,9 +94,11 @@ function App() {
             <p className="text-danger">{error}</p>
           </Form.Group>
 
-
+          <Form.Group className="mb-3" controlId="formBasicCheckbox">
+            <Form.Check onChange={handleRegisteredChange} type="checkbox" label="You have already account?" />
+          </Form.Group>
           <Button variant="primary" type="submit">
-            Submit
+            {registered ? 'Login' : 'Register'}
           </Button>
         </Form>
       </div>
